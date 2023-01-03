@@ -1,5 +1,29 @@
 {
-    "masterNode": [],
-    "workerNode": [],
-    "loadbalancerNode": []
+    "masterNode": [
+        {
+            "k8s-master1": "192.168.13.218"
+        },
+        {
+            "k8s-master2": "192.168.13.219"
+        }
+    ],
+    "workerNode": [
+        {
+            "k8s-worker1": "192.168.13.220"
+        },
+        {
+            "k8s-worker2": "192.168.13.221"
+        },
+        {
+            "k8s-worker3": "192.168.13.222"
+        }
+    ],
+    "loadbalancerNode": [
+        {
+            "k8s-loadbalancer1": "192.168.13.223"
+        },
+        {
+            "k8s-loadbalancer2": "192.168.13.224"
+        }
+    ]
 }

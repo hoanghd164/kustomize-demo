@@ -7,17 +7,17 @@ os.system('clear')
 
 class kvm:
     def vars():
-        # dict_Vps = {'kubernetes': [
-        #         {'k8s-master': {'cpu': 2, 'memory': 4, 'diskSize': 50,'sl': 2}},
-        #         {'k8s-worker': {'cpu': 8, 'memory': 16, 'diskSize': 200,'sl': 3}},
-        #         {'k8s-loadbalancer': {'cpu': 2, 'memory': 4, 'diskSize': 50,'sl': 2}}
-        #     ], 'startIP': '192.168.13.218'
-        # }
-
         dict_Vps = {'kubernetes': [
-                {'kvm-node': {'cpu': 4, 'memory': 16, 'diskSize': 200,'sl': 2}},
-            ], 'startIP': '192.168.13.225'
+                {'k8s-master': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}},
+                {'k8s-worker': {'cpu': 8, 'memory': 16, 'diskSize': 100,'sl': 3}},
+                {'k8s-loadbalancer': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}}
+            ], 'startIP': '192.168.13.218'
         }
+
+        # dict_Vps = {'kubernetes': [
+        #         {'kvm-node': {'cpu': 4, 'memory': 16, 'diskSize': 200,'sl': 2}},
+        #     ], 'startIP': '192.168.13.225'
+        # }
 
         dict_Authen = {
             'username': 'hoanghd',
