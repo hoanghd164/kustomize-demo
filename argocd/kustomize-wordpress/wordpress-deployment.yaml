@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: website-wp
+  namespace: wordpress
+  labels:
+    app: website-wp
+spec:
+  selector:
+    matchLabels:
+      app: website-wp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: website-wp
+    spec:
+      containers:
+      - image: wordpress:5.8-apache
+        imagePullPolicy: IfNotPresent
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: website-mysql
+        - name: WORDPRESS_DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql
+              key: db_name
+        - name: WORDPRESS_DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql
+              key: db_user
+        - name: WORDPRESS_TABLE_PREFIX
+          valueFrom:
+            secretKeyRef:
+              name: mysql
+              key: db_prefix
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql
+              key: db_pass
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-files
+          mountPath: /var/www/html
+      volumes:
+      - name: wordpress-files
+        persistentVolumeClaim:
+          claimName: website-wp-pvc

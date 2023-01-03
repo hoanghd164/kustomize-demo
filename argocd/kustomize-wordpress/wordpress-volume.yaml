@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: website-wp-pv
+  namespace: wordpress
+  labels:
+    app: website-wp
+spec:
+  storageClassName: website-wp
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/nfs/website/www"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: website-wp-pvc
+  namespace: wordpress
+  labels:
+    app: website-wp
+spec:
+  storageClassName: website-wp
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi

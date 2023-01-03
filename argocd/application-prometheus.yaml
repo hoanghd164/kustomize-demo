@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-application
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/hoanghd164/kustomize-demo.git
+    targetRevision: HEAD
+    path: kustomize-prometheus
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitor1
+    
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    automated:
+      selfHeal: true
+      prune: true

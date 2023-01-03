@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: website-mysql-pv
+  namespace: wordpress
+  labels:
+    app: website-mysql
+spec:
+  storageClassName: website-mysql
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/nfsdata/website/mysql"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: website-mysql-pvc
+  namespace: wordpress
+  labels:
+    app: website-mysql
+spec:
+  storageClassName: website-mysql
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
