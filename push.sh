@@ -1,7 +1,7 @@
 #!/bin/bash
 clear
-rm -rf .git
-git init
+# rm -rf .git
+# git init
 git config --global user.name "hoanghd"
 git config --global user.email "hoanghd164@gmail.com"
 git add .
