@@ -1,23 +1,23 @@
 #!/usr/bin/python3
 from common.envs import *
 from common.module import *
-from infra.kubernetes import *
+from kubernetes import *
 
 os.system('clear')
 
 class kvm:
     def vars():
-        dict_Vps = {'kubernetes': [
-                {'k8s-master': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}},
-                {'k8s-worker': {'cpu': 8, 'memory': 16, 'diskSize': 100,'sl': 3}},
-                {'k8s-loadbalancer': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}}],
-                'startIP': '192.168.13.218'
-        }
-
         # dict_Vps = {'kubernetes': [
-        #         {'kvm-node': {'cpu': 4, 'memory': 16, 'diskSize': 200,'sl': 1}},
-        #     ], 'startIP': '172.16.1.101'
+        #         {'k8s-master': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}},
+        #         {'k8s-worker': {'cpu': 8, 'memory': 16, 'diskSize': 100,'sl': 3}},
+        #         {'k8s-loadbalancer': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}}],
+        #         'startIP': '192.168.13.218'
         # }
+
+        dict_Vps = {'kubernetes': [
+                {'kvm-docker': {'cpu': 4, 'memory': 16, 'diskSize': 200,'sl': 1}},
+            ], 'startIP': '192.168.13.226'
+        }
 
         dict_Authen = {
             'username': 'hoanghd',
@@ -599,20 +599,19 @@ class kvm:
             list_vps = define_vps_Deploy[0]
             vps_type = define_vps_Deploy[1]
             count_vps = len(list_vps)
-            print('\n','-'*30,' Kubernetes cluster will deploy in about 30 second ','-'*30)
-            time.sleep(30)
+            if vps_type == 'kubernetes-packer-image-ubuntu1804':
+                print('\n','-'*30,' Kubernetes cluster will deploy in about 30 second ','-'*30)
+                time.sleep(30)
+                for i in list_vps:
+                    finally_list_vars = json.loads(i.replace("'",'"'))
+                    ipaddr = list(finally_list_vars.values())[0]
+                    hostname = list(finally_list_vars.keys())[0]
+                    icmp = script_check.icmp(ipaddr) 
+                    vps_check_icmp.append(icmp)
+                    if icmp == 0:
+                        detailt_vps_check_icmp.append({hostname: ipaddr})
 
-            for i in list_vps:
-                finally_list_vars = json.loads(i.replace("'",'"'))
-                ipaddr = list(finally_list_vars.values())[0]
-                hostname = list(finally_list_vars.keys())[0]
-                icmp = script_check.icmp(ipaddr) 
-                vps_check_icmp.append(icmp)
-                if icmp == 0:
-                    detailt_vps_check_icmp.append({hostname: ipaddr})
-
-            if sum(vps_check_icmp) == count_vps:
-                if vps_type == 'kubernetes-packer-image-ubuntu1804':
+                if sum(vps_check_icmp) == count_vps:
                     print('''- Kubernetes, often abbreviated as “K8s”, orchestrates containerized applications to run on a cluster of hosts.\n- The K8s system automates the deployment and management of cloud native applications using on-premises infrastructure or public cloud platforms.\n- It distributes application workloads across a Kubernetes cluster and automates dynamic container networking needs.\n- Kubernetes also allocates storage and persistent volumes to running containers, provides automatic scaling, and works continuously to maintain the desired state of applications, providing resiliency.\n''')
                     deploys.prepareEnv()
                     deploys.sshConfig()
@@ -632,12 +631,12 @@ class kvm:
                     deploys.metallb()
                     deploys.argocd()
                     deploys.dashboard()
-            else:
-                for x in detailt_vps_check_icmp:
-                    for hostname,ipaddr in x.items():
-                        print('- Server %s (%s) is not ready' %(hostname,ipaddr))
+                else:
+                    for x in detailt_vps_check_icmp:
+                        for hostname,ipaddr in x.items():
+                            print('- Server %s (%s) is not ready' %(hostname,ipaddr))
 
-            file_option.file_remove('dict_Node.json')
+                file_option.file_remove('dict_Node.json')
 
         elif action == 'vps_Destroy':
             kvm.vps_Destroy()
