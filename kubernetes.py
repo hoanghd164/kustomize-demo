@@ -6,7 +6,8 @@ os.system('clear')
 
 class deploys:
     def vars():
-        dict_Node = file_json.json_read('dict_Node.json')        
+        dict_Node = file_json.json_read('dict_Node.json')
+
         # dict_Node = {
         #     'masterNode': [{'k8s-master1': '192.168.13.218'}, {'k8s-master2': '192.168.13.219'}],
         #     'workerNode': [{'k8s-worker1': '192.168.13.220'}, {'k8s-worker2': '192.168.13.221'}, {'k8s-worker3': '192.168.13.222'}],
@@ -25,7 +26,7 @@ class deploys:
 
         dict_Network = {
             'pod_network_cidr': '10.244.0.0/16',
-            'vitualIP': '192.168.13.239',
+            'vitualIP': '172.16.1.100',
             'nicPhysical': 'enp1s0',
             'sshPort': 22
         }
@@ -47,7 +48,10 @@ class deploys:
             'apt': ['sshpass','tree'],
         }
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -57,7 +61,9 @@ class deploys:
                     remoteAction.sshRemote(sshPort,sshUser,sshIpaddr,commands)
 
     def defineVars():
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+        for nodeType,listNode in listDict:
             if 'masterNode' in nodeType:
                 masterHostname = list(listNode[0].keys())[0]
                 masterIpaddr = list(listNode[0].values())[0]
@@ -77,12 +83,14 @@ class deploys:
         os.system('chmod 600 %s/authorized_keys' %(src_rootDir))
         sourceIdrsa = '%s/id_rsa' %(src_rootDir)
         sourceAuthorizedkeys = '%s/authorized_keys' %(src_rootDir)
-
         sshUser = deploys.vars()[1]['username']
         sshPasswd= deploys.vars()[1]['password']
         sshPort = deploys.vars()[3]['sshPort']
+        
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -104,7 +112,10 @@ class deploys:
         os.system('cp /etc/hosts %s/hosts' %(src_rootDir))
         
         count = 1
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -126,7 +137,10 @@ class deploys:
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -138,11 +152,14 @@ class deploys:
         print('\n','-'*30,' Keepalive config ','-'*30)
         src_rootDir = deploys.vars()[2]['src_rootDir']
         nicPhysical = deploys.vars()[3]['nicPhysical']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -161,7 +178,10 @@ class deploys:
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -170,7 +190,7 @@ class deploys:
                     configAPI = '''frontend stats\n    bind *:8080\n    mode http\n    stats enable\n    stats uri /stats\n    stats refresh 10s\n    stats admin if LOCALHOST\n\nfrontend fe-apiserver\n    bind 0.0.0.0:6443\n    mode tcp\n    option tcplog\n    default_backend be-apiserver\n\nbackend be-apiserver\n    mode tcp\n    option tcplog\n    option tcp-check\n    balance roundrobin\n    default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100\n'''
                     file_option.file_write(sourceConfig,configAPI)
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -181,7 +201,7 @@ class deploys:
         workerHTTP = '''\nfrontend http_frontend\n    bind *:80\n    mode tcp\n    option tcplog\n    default_backend http_backend\n\nbackend http_backend\n    mode tcp\n    balance roundrobin\n'''
         file_option.val_add_to_file(sourceConfig,workerHTTP)
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -192,7 +212,7 @@ class deploys:
         workerHTTPS = '''\nfrontend https_frontend\n    bind *:443\n    mode tcp\n    option tcplog\n    default_backend https_backend\n\nbackend https_backend\n    mode tcp\n    balance roundrobin\n'''
         file_option.val_add_to_file(sourceConfig,workerHTTPS)
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -200,7 +220,7 @@ class deploys:
                     workerHTTPS = '    server %s %s:30101 check\n' %(hostName,sshIpaddr)
                     file_option.val_add_to_file(sourceConfig,workerHTTPS)
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -213,11 +233,14 @@ class deploys:
     def clusterCreate():
         print('\n','-'*30,' Create kubernetes cluster ','-'*30)
         networkCidr = deploys.vars()[3]['pod_network_cidr']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
 
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+
+        for nodeType,listNode in listDict:
             if 'masterNode' in nodeType:
                 hostName = list(listNode[0].keys())[0]
                 sshIpaddr = list(listNode[0].values())[0]
@@ -230,8 +253,9 @@ class deploys:
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
         masterIpaddr = deploys.defineVars()[1]
-
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -247,7 +271,9 @@ class deploys:
         masterHostname = deploys.defineVars()[0]
         masterIpaddr = deploys.defineVars()[1]
         
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -261,7 +287,9 @@ class deploys:
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
         masterIpaddr = deploys.defineVars()[1]
-        for nodeType,listNode in deploys.vars()[0].items():
+        listDict = list(deploys.vars()[0].items())
+        listDict.pop()
+        for nodeType,listNode in listDict:
             for node in listNode:
                 hostName = list(node.keys())[0]
                 sshIpaddr = list(node.values())[0]
@@ -275,7 +303,7 @@ class deploys:
         print('- Install Calico network')
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         networkCidr = deploys.vars()[3]['pod_network_cidr']
         calicoConfig = """wget https://docs.projectcalico.org/v3.21/manifests/calico.yaml\nsudo sed -i 's/# - name: CALICO_IPV4POOL_CIDR/- name: CALICO_IPV4POOL_CIDR/' calico.yaml\nsudo sed -i 's|#   value: .*|  value: "%s"|g' calico.yaml\nkubectl apply -f calico.yaml""" %(networkCidr)
         remoteAction.sshRemote(sshPort,sshUser,vitualIP,calicoConfig)
@@ -284,7 +312,7 @@ class deploys:
         print('- Install Helm')
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         commandInstall = 'curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && chmod 700 get_helm.sh && ./get_helm.sh'
         remoteAction.sshRemote(sshPort,sshUser,vitualIP,commandInstall)
 
@@ -292,7 +320,7 @@ class deploys:
         print('- Deploy metrics server')
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         currentDir = os.path.abspath(os.getcwd())
         sourceManifest = '%s/manifest/metrics_server.yaml' %(currentDir)
         dst_rootDir = deploys.vars()[2]['dst_rootDir']
@@ -310,7 +338,7 @@ class deploys:
         print('- Deploy Ingress Nginx')
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         currentDir = os.path.abspath(os.getcwd())
         src_configMap = '%s/manifest/configMap.sh' %(currentDir)
         dst_rootDir = deploys.vars()[2]['dst_rootDir']
@@ -335,7 +363,7 @@ class deploys:
         print('- Deploy Metallb')
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         dst_rootDir = deploys.vars()[2]['dst_rootDir']
         dst_IPAddressPool = '%s/IPAddressPool.yaml' %(dst_rootDir)
         dst_L2Advertisement = '%s/L2Advertisement.yaml' %(dst_rootDir)
@@ -359,7 +387,7 @@ class deploys:
         argocdDomain = "argocd.hoanghd.com"
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         dst_rootDir = deploys.vars()[2]['dst_rootDir']
         currentDir = os.path.abspath(os.getcwd())
         src_argocd_values = '%s/manifest/argocd_values.yaml' %(currentDir)
@@ -374,12 +402,13 @@ class deploys:
         remoteAction.sshRemote(sshPort,sshUser,vitualIP,commandDeploy)
 
         print(' + Default username is "admin" and use command "kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath=\'{.data.password}\' | base64 -d" to get password default\n')
-
+        print('- The ArgoCD webinterface: http://%s' %(argocdDomain))
+    
     def dashboard():
         print('- Deploy Kubernetes dashboard')
         sshUser = deploys.vars()[1]['username']
         sshPort = deploys.vars()[3]['sshPort']
-        vitualIP = deploys.vars()[3]['vitualIP']
+        vitualIP = deploys.vars()[0]['vitualIP']
         dst_rootDir = deploys.vars()[2]['dst_rootDir']
         dst_kubernetesDir = '%s/dashboard_certs/' %(dst_rootDir)
         dashboardDomain = "dashboard.hoanghd.com"
@@ -407,6 +436,8 @@ class deploys:
         applyConfig = 'kubectl apply -f %s && kubectl apply -f %s' %(src_dashboardAdminuse,dst_dashboardRbac)
         remoteAction.sshRemote(sshPort,sshUser,vitualIP,applyConfig)
         print('\n','-'*30,' The Kubernetes cluster has been deployed ','-'*30,)
+        print('- The virtual ip address: %s' %(vitualIP))
+        print('- The Haproxy webmonitor: http://%s:8080/stats' %(deploys.vars()[0]['vitualIP']))
 
 # deploys.prepareEnv()
 # deploys.sshConfig()

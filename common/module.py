@@ -126,3 +126,39 @@ class packagesInstall:
                 file_option.file_write('requirements.txt',module)
                 os.system('sudo pip3 install -r requirements.txt %s' %(output))
                 os.system('sudo rm -rf requirements.txt' %(output))
+
+class script_check:
+    def icmp(target_ipaddr):
+        temp = 1
+        count = 3 
+        while temp <= count:
+            response = subprocess.check_output("ping -c 1 -W 0.5 " + target_ipaddr + ' | grep -Eo "[0-9]+% packet loss" | grep -Eo "^[0-9]"', shell=True).decode("utf-8").strip('\n')
+            if int(response) == 1:
+                if temp == count:
+                    response = 0
+            else:
+                response = 1
+                break  
+            temp += 1 
+
+        return response
+    
+    def tcp(target_ipaddr,port):
+        temp=1
+        count=3
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        while temp <= count:
+            result = sock.connect_ex((target_ipaddr,int(port)))
+
+            if result == 0:
+                result = 1
+                return result
+            else:
+                if temp == count:
+                    result = 0
+                    return result
+                    break
+            temp += 1
+
+        return result

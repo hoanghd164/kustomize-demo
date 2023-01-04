@@ -10,13 +10,13 @@ class kvm:
         dict_Vps = {'kubernetes': [
                 {'k8s-master': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}},
                 {'k8s-worker': {'cpu': 8, 'memory': 16, 'diskSize': 100,'sl': 3}},
-                {'k8s-loadbalancer': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}}
-            ], 'startIP': '192.168.13.218'
+                {'k8s-loadbalancer': {'cpu': 2, 'memory': 4, 'diskSize': 30,'sl': 2}}],
+                'startIP': '192.168.13.218'
         }
 
         # dict_Vps = {'kubernetes': [
-        #         {'kvm-node': {'cpu': 4, 'memory': 16, 'diskSize': 200,'sl': 2}},
-        #     ], 'startIP': '192.168.13.225'
+        #         {'kvm-node': {'cpu': 4, 'memory': 16, 'diskSize': 200,'sl': 1}},
+        #     ], 'startIP': '172.16.1.101'
         # }
 
         dict_Authen = {
@@ -34,8 +34,8 @@ class kvm:
         }
 
         dict_network = {
-            'bridged-network': {'subnet' : '192.168.12.0', 'gateway' : '192.168.12.5', 'prefix' : 23},
-            ' nat-network-sub172': {'subnet' : '172.16.1.0','gateway' : '172.16.1.254','prefix' : 24}
+            'bridged-network': {'subnet' : '192.168.13.0', 'gateway' : '192.168.12.5', 'prefix' : 23},
+            'nat-network-sub172': {'subnet' : '172.16.1.0','gateway' : '172.16.1.254','prefix' : 24}
         }
 
         image_Info = {
@@ -148,16 +148,20 @@ class kvm:
                 else:
                     vps_name='%s%s'%(vm_name,temp_vpsName)
                 ipaddr = '%s.%s' %(subnet,startIP + temp_ipaddr-1)
-                list_Vps.append({'vps_name': vps_name, 'cpu': cpu,'memory': memory,'diskSize': diskSize,'ipaddr': ipaddr,})
+                vitualIP = '%s.%s' %(subnet,startIP + temp_ipaddr)
+                list_Vps.append({'vps_name': vps_name, 'cpu': cpu,'memory': memory,'diskSize': diskSize,'ipaddr': ipaddr})
                 temp_vpsName += 1
                 temp_ipaddr += 1
+        list_Vps.append({'vitualIP': vitualIP})
         return list_Vps
 
     def convert_kubernetes_vars():
         list_vars = kvm.define_Vps()
+        vitualIP = list_vars[-1]['vitualIP']
         list_dict_master = []
         list_dict_worker = []
         list_dict_loadbalancer = []
+        list_vars.pop()
 
         for x in list_vars:
             if 'master' in x['vps_name']:
@@ -175,8 +179,8 @@ class kvm:
         dict_master = '\'masterNode\': %s' %(list_dict_master)
         dict_worker = '\'workerNode\': %s' %(list_dict_worker)
         dict_loadbalancer = '\'loadbalancerNode\': %s' %(list_dict_loadbalancer)
-
-        developer_str = ('{%s, %s, %s}' %(dict_master,dict_worker,dict_loadbalancer)).replace("'",'"')
+        dict_vitualIP = '\'vitualIP\': \'%s\'' %(vitualIP)
+        developer_str = ('{%s, %s, %s, %s}' %(dict_master,dict_worker,dict_loadbalancer,dict_vitualIP)).replace("'",'"')
         finally_list_vars = json.loads(developer_str)
         file_json.json_write('dict_Node.json',finally_list_vars)
         return developer_str
@@ -331,38 +335,47 @@ class kvm:
             --noautoconsole %s' %(vps_name,memory,cpu,seed_path,os_path,type_os,variant,network,output))
         print('- Successfully created VPS %s' %(vps_name))
 
-    def vps_Deploy():
-        vps_type = kvm.vps_choiseOS()
-        disk_type = kvm.vps_diskType()
-        username = kvm.vars()[1]['username']
-        passwd = kvm.vars()[1]['passwd']
-        network = list(kvm.vars()[3].keys())[0]
-        gateway = list(kvm.vars()[3].values())[0]['gateway']
-        prefix = list(kvm.vars()[3].values())[0]['prefix']
-        kvm.convert_kubernetes_vars()
-        for vps_name in kvm.define_Vps():
-            cpu = vps_name['cpu']
-            memory = int(vps_name['memory'])*1024
-            ipaddr = vps_name['ipaddr']
-            disk_size = vps_name['diskSize']
-            vps_name = vps_name['vps_name']
-            hostname = '%s.com' %(vps_name)
-            path_info = kvm.define_path(vps_name,vps_type,disk_type)
-            cloudinit_path_default = kvm.define_cloudinit(vps_type)[0]
-            network_path_default = kvm.define_cloudinit(vps_type)[1]
-            for i in path_info:
-                if i['vps_name'] == vps_name:
-                    seed_path = path_info[0]['seed_path']
-                    os_path = path_info[0]['os_path']
-                    image_path = path_info[0]['image_path']
-                    interface_name = path_info[0]['interface_name']
-                    cloudinit_path = path_info[0]['cloudinit_path']
-                    network_path = path_info[0]['network_path']
-                    kvm.config_cloudinit(cloudinit_path_default,network_path_default,cloudinit_path,network_path,hostname,interface_name,ipaddr,prefix,gateway,username,passwd)
-                    kvm.create_diskOS(image_path,os_path,disk_size)
-                    kvm.create_diskSeed(network_path,cloudinit_path,seed_path)
-                    kvm.vps_Run(vps_type,vps_name,memory,cpu,seed_path,os_path,network)
-        return vps_type
+    def vps_Deploy(subnet):
+        list_vps = []
+        list_vars = kvm.vars()[3]
+        define_Vps = kvm.define_Vps()
+        define_Vps.pop()
+        for network,value in list_vars.items():
+            split_subnet = value['subnet'].split('.')
+            split_subnet.pop()
+            subnet_in_vars = '.'.join(split_subnet)
+            if subnet == subnet_in_vars:
+                gateway = value['gateway']
+                prefix = value['prefix']
+                vps_type = kvm.vps_choiseOS()
+                disk_type = kvm.vps_diskType()
+                username = kvm.vars()[1]['username']
+                passwd = kvm.vars()[1]['passwd']
+                kvm.convert_kubernetes_vars()
+                for vps_name in define_Vps:
+                    cpu = vps_name['cpu']
+                    memory = int(vps_name['memory'])*1024
+                    ipaddr = vps_name['ipaddr']
+                    disk_size = vps_name['diskSize']
+                    vps_name = vps_name['vps_name']
+                    hostname = '%s.com' %(vps_name)
+                    path_info = kvm.define_path(vps_name,vps_type,disk_type)
+                    cloudinit_path_default = kvm.define_cloudinit(vps_type)[0]
+                    network_path_default = kvm.define_cloudinit(vps_type)[1]
+                    for i in path_info:
+                        if i['vps_name'] == vps_name:
+                            seed_path = path_info[0]['seed_path']
+                            os_path = path_info[0]['os_path']
+                            image_path = path_info[0]['image_path']
+                            interface_name = path_info[0]['interface_name']
+                            cloudinit_path = path_info[0]['cloudinit_path']
+                            network_path = path_info[0]['network_path']
+                            kvm.config_cloudinit(cloudinit_path_default,network_path_default,cloudinit_path,network_path,hostname,interface_name,ipaddr,prefix,gateway,username,passwd)
+                            kvm.create_diskOS(image_path,os_path,disk_size)
+                            kvm.create_diskSeed(network_path,cloudinit_path,seed_path)
+                            kvm.vps_Run(vps_type,vps_name,memory,cpu,seed_path,os_path,network)
+                            list_vps.append('{\'%s\': \'%s\'}' %(vps_name,ipaddr))
+            return list_vps, vps_type
 
     def vps_Destroy():
         values = subprocess.check_output("virsh list --all | awk 'FNR>='3'{print;}' | head -n -1 | awk '{print $2}'", shell=True).decode("utf-8").strip('\n').split('\n')
@@ -375,7 +388,7 @@ class kvm:
         except:
             vps_Status = 0
         if int(vps_Status) == 1:
-            os.system('virsh shutdown %s' %(vps_name))
+            os.system('virsh destroy %s' %(vps_name))
         os.system('virsh undefine %s' %(vps_name))
         os.system('''rm -rf %s''' %(vps_path))
         print('- Removing %s successful\n' %(vps_name))
@@ -406,7 +419,7 @@ class kvm:
         vps_name = loops.choiseMenu_noDict(values)
         vps_path = '/%s/sshkey/sshkey.info' %(subprocess.check_output("""virsh domblklist %s | grep -v 'Target' | grep 'seed\|snapshot\|os' | awk '{print $2}' | cut -d'/' -f2,3,4,5 | head -1""" %(vps_name), shell=True).decode("utf-8").strip('\n'))
         read_sshkey = file_option.file_read(vps_path)
-        # print('\n%s\n' %(read_sshkey))
+        print('\n%s\n' %(read_sshkey))
         os.system(read_sshkey)
 
     def vps_Console():
@@ -577,30 +590,54 @@ class kvm:
         action = loops.choiseMenu(listMenu)
 
         if action == 'vps_Deploy':
-            vps_type = kvm.vps_Deploy()
-            if vps_type == 'kubernetes-packer-image-ubuntu1804':
-                print('\n','-'*30,' Kubernetes cluster will deploy in about 1 minute ','-'*30)
-                print('''- Kubernetes, often abbreviated as “K8s”, orchestrates containerized applications to run on a cluster of hosts.\n- The K8s system automates the deployment and management of cloud native applications using on-premises infrastructure or public cloud platforms.\n- It distributes application workloads across a Kubernetes cluster and automates dynamic container networking needs.\n- Kubernetes also allocates storage and persistent volumes to running containers, provides automatic scaling, and works continuously to maintain the desired state of applications, providing resiliency.\n''')
-                time.sleep(30)
-                deploys.prepareEnv()
-                deploys.sshConfig()
-                deploys.remotePkgsInstall()
-                deploys.hostnameConfig()
-                deploys.firewallConfig()
-                deploys.keepaliveConfig()
-                deploys.haproxyConfig()
-                deploys.clusterCreate()
-                deploys.loadbalancerConfig()
-                deploys.joinMaster()
-                deploys.joinWorker()
-                deploys.calicoNetwork()
-                deploys.helmInstall()
-                deploys.metricServer()
-                deploys.ingressNginx()
-                deploys.metallb()
-                deploys.argocd()
-                deploys.dashboard()
-                file_option.file_remove('dict_Node.json')
+            vps_check_icmp = []
+            detailt_vps_check_icmp = []
+            split_ipaddr = kvm.vars()[0]['startIP'].split('.')
+            split_ipaddr.pop()
+            subnet = '.'.join(split_ipaddr)
+            define_vps_Deploy = kvm.vps_Deploy(subnet)
+            list_vps = define_vps_Deploy[0]
+            vps_type = define_vps_Deploy[1]
+            count_vps = len(list_vps)
+            print('\n','-'*30,' Kubernetes cluster will deploy in about 30 second ','-'*30)
+            time.sleep(30)
+
+            for i in list_vps:
+                finally_list_vars = json.loads(i.replace("'",'"'))
+                ipaddr = list(finally_list_vars.values())[0]
+                hostname = list(finally_list_vars.keys())[0]
+                icmp = script_check.icmp(ipaddr) 
+                vps_check_icmp.append(icmp)
+                if icmp == 0:
+                    detailt_vps_check_icmp.append({hostname: ipaddr})
+
+            if sum(vps_check_icmp) == count_vps:
+                if vps_type == 'kubernetes-packer-image-ubuntu1804':
+                    print('''- Kubernetes, often abbreviated as “K8s”, orchestrates containerized applications to run on a cluster of hosts.\n- The K8s system automates the deployment and management of cloud native applications using on-premises infrastructure or public cloud platforms.\n- It distributes application workloads across a Kubernetes cluster and automates dynamic container networking needs.\n- Kubernetes also allocates storage and persistent volumes to running containers, provides automatic scaling, and works continuously to maintain the desired state of applications, providing resiliency.\n''')
+                    deploys.prepareEnv()
+                    deploys.sshConfig()
+                    deploys.remotePkgsInstall()
+                    deploys.hostnameConfig()
+                    deploys.firewallConfig()
+                    deploys.keepaliveConfig()
+                    deploys.haproxyConfig()
+                    deploys.clusterCreate()
+                    deploys.loadbalancerConfig()
+                    deploys.joinMaster()
+                    deploys.joinWorker()
+                    deploys.calicoNetwork()
+                    deploys.helmInstall()
+                    deploys.metricServer()
+                    deploys.ingressNginx()
+                    deploys.metallb()
+                    deploys.argocd()
+                    deploys.dashboard()
+            else:
+                for x in detailt_vps_check_icmp:
+                    for hostname,ipaddr in x.items():
+                        print('- Server %s (%s) is not ready' %(hostname,ipaddr))
+
+            file_option.file_remove('dict_Node.json')
 
         elif action == 'vps_Destroy':
             kvm.vps_Destroy()
