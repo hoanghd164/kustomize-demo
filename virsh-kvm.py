@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from common.envs import *
 from common.module import *
-from kubernetes import *
+from infra.kubernetes import *
 
 os.system('clear')
 
