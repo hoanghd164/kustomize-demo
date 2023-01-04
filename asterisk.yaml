@@ -1,0 +1,34 @@
+version: '3'
+services:
+  asterisk:
+    image: asterisk:latest
+    container_name: asterisk
+    restart: always
+    ports:
+     - "5060:5060/udp"
+     - "5060:5060/tcp"
+     - "10000-10099:10000-10099/udp"
+     - "8088:8088"
+     - "8089:8089"
+    # volumes:
+    #  - "/home/asterisk/var/conf/msmtprc:/etc/msmtprc"
+    #  - "/home/asterisk/var/conf/asterisk:/etc/asterisk"
+    #  - "/home/asterisk/var/data/asterisk:/var/lib/asterisk"
+    #  - "/home/asterisk/var/data/asterisk-spool:/var/spool/asterisk"
+    networks:
+      - asterisk_network
+    stdin_open: true 
+    tty: true
+
+networks:
+  asterisk_network:
+    driver: bridge
+    name: asterisk_network
+    ipam:
+      config:
+        - subnet: "172.18.0.0/16"
+
+# mkdir -p /home/asterisk/var/conf/msmtprc
+# mkdir -p /home/asterisk/var/conf/asterisk
+# mkdir -p /home/asterisk/var/data/asterisk
+# mkdir -p /home/asterisk/var/data/asterisk-spool
