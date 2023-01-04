@@ -1,6 +1,7 @@
 docker run -it --name=asterisk --hostname=asterisk --network=host centos:centos7
 docker run -itd --name=pbx-asterisk --network=host -p 5060:5060/tcp -p 5060:5060/udp -p 10000:30000/udp hoanghd164/asterisk:16pbx bash
-docker run -itd --name=pbx-asterisk -p 5060:5060/tcp -p 5060:5060/udp -p 10000:30000/udp asterisk:latest bash
+docker run -itd --name=pbx-asterisk -p 5060:5060/tcp -p 5060:5060/udp asterisk:latest bash
+docker run -itd --name=pbx-asterisk --network=host -p 5060:5060/tcp -p 5060:5060/udp -p 10000:30000/udp asterisk:latest bash
 
 yum  -y install epel-release
 yum -y install wget vim net-tools
