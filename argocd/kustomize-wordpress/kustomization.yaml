@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namePrefix: kustomize-
+
+resources:
+- wordpress-deployment.yaml
+- wordpress-service.yaml
+- wordpress-service.yaml
+
+patches:
+  - target:
+      kind: Ingress
+      name: prometheus
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: prometheus01.hoanghd.com
+
+commonAnnotations:
+  channel: hoanghd
+
+# patchesStrategicMerge:
+# - ingress-patch.yaml
